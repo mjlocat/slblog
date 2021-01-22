@@ -1,0 +1,33 @@
+{
+  "name": "slblog",
+  "version": "1.0.0",
+  "description": "ServerLess Blog",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mjlocat/slblog.git"
+  },
+  "author": "Michael Locatelli",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/mjlocat/slblog/issues"
+  },
+  "homepage": "https://github.com/mjlocat/slblog#readme",
+  "devDependencies": {
+    "eslint": "^7.18.0",
+    "eslint-config-airbnb": "^18.2.1",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-react": "^7.22.0",
+    "eslint-plugin-react-hooks": "^4.2.0",
+    "jest": "^26.6.3",
+    "mock-fs": "^4.13.0"
+  },
+  "dependencies": {
+    "winston": "^3.3.3"
+  }
+}
