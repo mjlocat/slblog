@@ -2,7 +2,7 @@ const config = require('./config');
 
 let configObj = {};
 
-module.exports.runInstaller = () => {
+module.exports.runInstaller = async () => {
   configObj = config.getConfig();
 
   config.saveConfig(configObj);

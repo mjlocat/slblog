@@ -1,11 +1,8 @@
 const fs = require('fs');
-const { createLogger, format, transports } = require('winston');
+const createLogger = require('./logger');
 
 const configFileName = 'config.json';
 const logger = createLogger();
-logger.add(new transports.Console({
-  format: format.simple()
-}));
 
 module.exports.getConfig = () => {
   let config = {};

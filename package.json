@@ -44,6 +44,7 @@
     "mock-fs": "^4.13.0"
   },
   "dependencies": {
+    "prompt-async": "^0.9.9",
     "winston": "^3.3.3"
   }
 }
