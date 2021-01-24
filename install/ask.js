@@ -2,6 +2,8 @@ const prompt = require('prompt-async');
 const createLogger = require('./logger');
 
 const logger = createLogger();
+prompt.message = '';
+prompt.delimiter = '';
 
 module.exports = async (properties) => {
   try {
