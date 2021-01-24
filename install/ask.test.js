@@ -3,7 +3,16 @@
 /* global expect */
 
 const prompt = require('prompt-async');
+const createLogger = require('./logger');
 const ask = require('./ask');
+
+jest.mock('./logger');
+const mockLogger = jest.fn();
+createLogger.mockReturnValue({
+  info: mockLogger,
+  warn: mockLogger,
+  error: mockLogger
+});
 
 jest.mock('prompt-async');
 

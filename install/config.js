@@ -2,9 +2,9 @@ const fs = require('fs');
 const createLogger = require('./logger');
 
 const configFileName = 'config.json';
-const logger = createLogger();
 
 module.exports.getConfig = () => {
+  const logger = createLogger();
   let config = {};
   let configStr;
 
@@ -34,6 +34,7 @@ module.exports.saveConfig = (config) => {
   try {
     fs.writeFileSync(configFileName, JSON.stringify(config, null, 2));
   } catch (e) {
+    const logger = createLogger();
     logger.error('Unable to write config file', e.message);
     throw e;
   }

@@ -1,7 +1,17 @@
+/* global jest */
 /* global test */
 /* global expect */
 const mockfs = require('mock-fs');
+const createLogger = require('./logger');
 const config = require('./config');
+
+jest.mock('./logger');
+const mockLogger = jest.fn();
+createLogger.mockReturnValue({
+  info: mockLogger,
+  warn: mockLogger,
+  error: mockLogger
+});
 
 test('Config file does not exist', () => {
   mockfs({});
