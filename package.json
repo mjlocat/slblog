@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "aws-sdk": "^2.831.0",
-    "prompt-async": "^0.9.9",
+    "prompts": "^2.4.0",
     "winston": "^3.3.3"
   }
 }

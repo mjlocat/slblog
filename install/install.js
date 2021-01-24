@@ -1,5 +1,6 @@
+const prompts = require('prompts');
 const config = require('./config');
-const ask = require('./ask');
+const validators = require('./validators');
 
 let configObj = {};
 
@@ -7,14 +8,13 @@ module.exports.runInstaller = async () => {
   process.on('SIGINT', module.exports.interruptHandler);
 
   configObj = config.getConfig();
-  configObj.prefix = await ask({
+  Object.assign(configObj, await prompts({
+    type: 'text',
     name: 'prefix',
-    description: 'Enter a prefix to be applied to all resources created',
-    type: 'string',
-    default: configObj.prefix || 'slblog-',
-    pattern: /^[a-zA-Z][a-z-A-Z0-9-]*-/,
-    message: 'Must contain only numbers and letters, start with a letter and end in a dash'
-  });
+    message: 'Enter a prefix to be applied to all resources created',
+    initial: configObj.prefix || 'slblog-',
+    validate: validators.prefixValidator
+  }));
 
   config.saveConfig(configObj);
   process.removeListener('SIGINT', module.exports.interruptHandler);

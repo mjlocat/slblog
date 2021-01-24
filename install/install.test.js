@@ -1,13 +1,13 @@
 /* global jest */
 /* global test */
 /* global expect */
+const prompts = require('prompts');
 const config = require('./config');
-const ask = require('./ask');
 const install = require('./install');
 
 jest.mock('./config');
-jest.mock('./ask');
-ask.mockReturnValue('bar');
+jest.mock('prompts');
+prompts.mockReturnValue('bar');
 
 test('Installer script initializes configuration and saves at the end', async () => {
   const configObj = { foo: 'bar' };
