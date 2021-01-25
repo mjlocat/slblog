@@ -45,8 +45,20 @@ test('List hosted zones', async () => {
       callback('foo');
     }
   });
+  const expectedResult = [
+    {
+      id: 'foo',
+      name: 'foo.com.'
+    }, {
+      id: 'bar',
+      name: 'bar.com.'
+    }, {
+      id: 'baz',
+      name: 'baz.com.'
+    }
+  ];
   const result = await aws.getHostedZones();
-  expect(result).toEqual(['foo.com.', 'bar.com.', 'baz.com.']);
+  expect(result).toEqual(expectedResult);
   awsMock.restore('Route53', 'listHostedZones');
 });
 

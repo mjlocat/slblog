@@ -16,7 +16,18 @@ test('Installer script initializes configuration and saves at the end', async ()
     zone: 'foo.com.'
   };
   config.getConfig.mockReturnValueOnce({ });
-  aws.getHostedZones.mockResolvedValueOnce(['foo.com.', 'bar.com.', 'baz.com.']);
+  aws.getHostedZones.mockResolvedValueOnce([
+    {
+      id: 'foo',
+      name: 'foo.com.'
+    }, {
+      id: 'bar',
+      name: 'bar.com.'
+    }, {
+      id: 'baz',
+      name: 'baz.com.'
+    }
+  ]);
   let savedConfig = {};
   config.saveConfig.mockImplementation((inConfig) => { savedConfig = inConfig; });
   prompts.mockResolvedValueOnce({ prefix: 'foo-' });
@@ -46,19 +57,30 @@ test('Interrupt handler function saves config', () => {
 });
 
 test('Build hosted zone options', async () => {
-  aws.getHostedZones.mockResolvedValueOnce(['foo.com.', 'bar.com.', 'baz.com.']);
-  const result = await install.getZoneOptions('bar.com.');
+  aws.getHostedZones.mockResolvedValueOnce([
+    {
+      id: 'foo',
+      name: 'foo.com.'
+    }, {
+      id: 'bar',
+      name: 'bar.com.'
+    }, {
+      id: 'baz',
+      name: 'baz.com.'
+    }
+  ]);
+  const result = await install.getZoneOptions('bar.com');
   expect(result).toEqual({
     choices: [
       {
         title: 'foo.com',
-        value: 'foo.com.'
+        value: { id: 'foo', name: 'foo.com' }
       }, {
         title: 'bar.com',
-        value: 'bar.com.'
+        value: { id: 'bar', name: 'bar.com' }
       }, {
         title: 'baz.com',
-        value: 'baz.com.'
+        value: { id: 'baz', name: 'baz.com' }
       }
     ],
     initial: 1

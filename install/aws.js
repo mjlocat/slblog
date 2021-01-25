@@ -10,7 +10,7 @@ module.exports.getHostedZones = async () => {
     do {
       // eslint-disable-next-line no-await-in-loop
       zones = await route53.listHostedZones({ Marker }).promise();
-      zones.HostedZones.forEach((z) => domains.push(z.Name));
+      zones.HostedZones.forEach((z) => domains.push({ id: z.Id, name: z.Name }));
       Marker = zones.NextMarker;
     } while (zones.IsTruncated);
     return domains;

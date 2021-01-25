@@ -7,8 +7,14 @@ let configObj = {};
 
 module.exports.getZoneOptions = async (zone) => {
   const zones = await aws.getHostedZones();
-  const choices = zones.map((z) => ({ title: z.replace(/\.$/, ''), value: z }));
-  const initial = zones.indexOf(zone);
+  const choices = zones.map((z) => ({
+    title: z.name.replace(/\.$/, ''),
+    value: {
+      id: z.id,
+      name: z.name.replace(/\.$/, '')
+    }
+  }));
+  const initial = zones.findIndex((z) => z.name.replace(/\.$/, '') === zone);
   return { choices, initial: initial === -1 ? undefined : initial };
 };
 
