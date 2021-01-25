@@ -78,3 +78,68 @@ test('List hosted zones fails', async () => {
   expect(testException()).toBeTruthy();
   awsMock.restore('Route53', 'listHostedZones');
 });
+
+test('List zone record sets', async () => {
+  awsMock.mock('Route53', 'listResourceRecordSets', (params, callback) => {
+    if (!params.StartRecordIdentifier) {
+      callback(null, {
+        ResourceRecordSets: [
+          {
+            Type: 'NS',
+            Name: 'foo.com.'
+          }, {
+            Type: 'A',
+            Name: 'foo.com.'
+          }, {
+            Type: 'AAAA',
+            Name: 'foo.com.'
+          }, {
+            Type: 'PTR',
+            Name: '1.0.0.127'
+          }
+        ],
+        IsTruncated: true,
+        NextRecordIdentifier: 'foo'
+      });
+    } else if (params.StartRecordIdentifier === 'foo') {
+      callback(null, {
+        ResourceRecordSets: [
+          {
+            Type: 'CNAME',
+            Name: 'www.foo.com.'
+          }, {
+            Type: 'AAAA',
+            Name: 'api.foo.com.'
+          }, {
+            Type: 'PTR',
+            Name: 'ptr.foo.com.'
+          }
+        ]
+      });
+    } else {
+      callback('foo');
+    }
+  });
+  const expected = ['foo.com.', 'www.foo.com.', 'api.foo.com.'];
+
+  const result = await aws.getDomainRecordSets('foo');
+  expect(result).toEqual(expected);
+  awsMock.restore('Route53', 'listResourceRecordSets');
+});
+
+test('List zone record sets fails', async () => {
+  awsMock.mock('Route53', 'listResourceRecordSets', (params, callback) => {
+    callback('foo');
+  });
+  const testException = async () => {
+    let exceptionThrown = false;
+    try {
+      await aws.getDomainRecordSets('foo');
+    } catch (e) {
+      exceptionThrown = true;
+    }
+    return exceptionThrown;
+  };
+  expect(testException()).toBeTruthy();
+  awsMock.restore('Route53', 'listResourceRecordSets');
+});
