@@ -1,145 +1,137 @@
-/* global jest */
-/* global test */
-/* global expect */
-const awsMock = require('aws-sdk-mock');
+const { Route53Client } = require('@aws-sdk/client-route-53');
+const { getHostedZones, getDomainRecordSets } = require('./aws');
 const createLogger = require('./logger');
-const aws = require('./aws');
 
+jest.mock('@aws-sdk/client-route-53');
 jest.mock('./logger');
-const mockLogger = jest.fn();
-createLogger.mockReturnValue({
-  info: mockLogger,
-  warn: mockLogger,
-  error: mockLogger
-});
 
-test('List hosted zones', async () => {
-  awsMock.mock('Route53', 'listHostedZones', (params, callback) => {
-    if (!params.Marker) {
-      callback(null, {
-        HostedZones: [
-          {
-            Id: 'foo',
-            Name: 'foo.com.',
-            CallerReference: 'foo'
-          }, {
-            Id: 'bar',
-            Name: 'bar.com.',
-            CallerReference: 'bar'
-          }
-        ],
+describe('getHostedZones', () => {
+  let sendMock;
+  let loggerMock;
+
+  beforeEach(() => {
+    sendMock = jest.fn();
+    Route53Client.mockImplementation(() => ({
+      send: sendMock,
+    }));
+    loggerMock = {
+      error: jest.fn(),
+    };
+    createLogger.mockReturnValue(loggerMock);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should return hosted zones', async () => {
+    sendMock.mockResolvedValueOnce({
+      HostedZones: [
+        { Id: 'zone1', Name: 'example.com' },
+        { Id: 'zone2', Name: 'example.org' },
+      ],
+      IsTruncated: false,
+    });
+
+    const result = await getHostedZones();
+
+    expect(result).toEqual([
+      { id: 'zone1', name: 'example.com' },
+      { id: 'zone2', name: 'example.org' },
+    ]);
+    expect(sendMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle pagination', async () => {
+    sendMock
+      .mockResolvedValueOnce({
+        HostedZones: [{ Id: 'zone1', Name: 'example.com' }],
         IsTruncated: true,
-        NextMarker: 'foobar'
+        NextMarker: 'marker1',
+      })
+      .mockResolvedValueOnce({
+        HostedZones: [{ Id: 'zone2', Name: 'example.org' }],
+        IsTruncated: false,
       });
-    } else if (params.Marker === 'foobar') {
-      callback(null, {
-        HostedZones: [
-          {
-            Id: 'baz',
-            Name: 'baz.com.',
-            CallerReference: 'baz'
-          }
-        ]
-      });
-    } else {
-      callback('foo');
-    }
+
+    const result = await getHostedZones();
+
+    expect(result).toEqual([
+      { id: 'zone1', name: 'example.com' },
+      { id: 'zone2', name: 'example.org' },
+    ]);
+    expect(sendMock).toHaveBeenCalledTimes(2);
   });
-  const expectedResult = [
-    {
-      id: 'foo',
-      name: 'foo.com.'
-    }, {
-      id: 'bar',
-      name: 'bar.com.'
-    }, {
-      id: 'baz',
-      name: 'baz.com.'
-    }
-  ];
-  const result = await aws.getHostedZones();
-  expect(result).toEqual(expectedResult);
-  awsMock.restore('Route53', 'listHostedZones');
+
+  it('should log and throw an error if fetching hosted zones fails', async () => {
+    const errorMessage = 'Error fetching Route53 Hosted Zones';
+    sendMock.mockRejectedValueOnce(new Error(errorMessage));
+
+    await expect(getHostedZones()).rejects.toThrow(errorMessage);
+    expect(loggerMock.error).toHaveBeenCalledWith('Error fetching Route53 Hosted Zones', errorMessage);
+  });
 });
 
-test('List hosted zones fails', async () => {
-  awsMock.mock('Route53', 'listHostedZones', (params, callback) => {
-    callback('foo');
-  });
-  const testException = async () => {
-    let exceptionThrown = false;
-    try {
-      await aws.getHostedZones();
-    } catch (e) {
-      exceptionThrown = true;
-    }
-    return exceptionThrown;
-  };
-  expect(testException()).toBeTruthy();
-  awsMock.restore('Route53', 'listHostedZones');
-});
+describe('getDomainRecordSets', () => {
+  let sendMock;
+  let loggerMock;
 
-test('List zone record sets', async () => {
-  awsMock.mock('Route53', 'listResourceRecordSets', (params, callback) => {
-    if (!params.StartRecordIdentifier) {
-      callback(null, {
-        ResourceRecordSets: [
-          {
-            Type: 'NS',
-            Name: 'foo.com.'
-          }, {
-            Type: 'A',
-            Name: 'foo.com.'
-          }, {
-            Type: 'AAAA',
-            Name: 'foo.com.'
-          }, {
-            Type: 'PTR',
-            Name: '1.0.0.127'
-          }
-        ],
+  beforeEach(() => {
+    sendMock = jest.fn();
+    Route53Client.mockImplementation(() => ({
+      send: sendMock,
+    }));
+    loggerMock = {
+      error: jest.fn(),
+    };
+    createLogger.mockReturnValue(loggerMock);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should return domain record sets', async () => {
+    sendMock.mockResolvedValueOnce({
+      ResourceRecordSets: [
+        { Name: 'example.com', Type: 'A' },
+        { Name: 'example.com', Type: 'AAAA' },
+        { Name: 'example.org', Type: 'CNAME' },
+        { Name: 'example.net', Type: 'AAAA' },
+        { Name: 'example.info', Type: 'TXT' },
+      ],
+      IsTruncated: false,
+    });
+
+    const result = await getDomainRecordSets('zoneId');
+
+    expect(result).toEqual(['example.com', 'example.org', 'example.net']);
+    expect(sendMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle pagination', async () => {
+    sendMock
+      .mockResolvedValueOnce({
+        ResourceRecordSets: [{ Name: 'example.com', Type: 'A' }],
         IsTruncated: true,
-        NextRecordIdentifier: 'foo'
+        NextRecordIdentifier: 'identifier1',
+      })
+      .mockResolvedValueOnce({
+        ResourceRecordSets: [{ Name: 'example.org', Type: 'CNAME' }],
+        IsTruncated: false,
       });
-    } else if (params.StartRecordIdentifier === 'foo') {
-      callback(null, {
-        ResourceRecordSets: [
-          {
-            Type: 'CNAME',
-            Name: 'www.foo.com.'
-          }, {
-            Type: 'AAAA',
-            Name: 'api.foo.com.'
-          }, {
-            Type: 'PTR',
-            Name: 'ptr.foo.com.'
-          }
-        ]
-      });
-    } else {
-      callback('foo');
-    }
-  });
-  const expected = ['foo.com.', 'www.foo.com.', 'api.foo.com.'];
 
-  const result = await aws.getDomainRecordSets('foo');
-  expect(result).toEqual(expected);
-  awsMock.restore('Route53', 'listResourceRecordSets');
-});
+    const result = await getDomainRecordSets('zoneId');
 
-test('List zone record sets fails', async () => {
-  awsMock.mock('Route53', 'listResourceRecordSets', (params, callback) => {
-    callback('foo');
+    expect(result).toEqual(['example.com', 'example.org']);
+    expect(sendMock).toHaveBeenCalledTimes(2);
   });
-  const testException = async () => {
-    let exceptionThrown = false;
-    try {
-      await aws.getDomainRecordSets('foo');
-    } catch (e) {
-      exceptionThrown = true;
-    }
-    return exceptionThrown;
-  };
-  expect(testException()).toBeTruthy();
-  awsMock.restore('Route53', 'listResourceRecordSets');
+
+  it('should log and throw an error if fetching domain record sets fails', async () => {
+    const errorMessage = 'Error fetching Route53 Record Sets';
+    sendMock.mockRejectedValueOnce(new Error(errorMessage));
+
+    await expect(getDomainRecordSets('zoneId')).rejects.toThrow(errorMessage);
+    expect(loggerMock.error).toHaveBeenCalledWith('Error fetching Route53 Record Sets', errorMessage);
+  });
 });

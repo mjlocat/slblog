@@ -1,6 +1,3 @@
-/* global jest */
-/* global test */
-/* global expect */
 const prompts = require('prompts');
 const aws = require('./aws');
 const config = require('./config');

@@ -1,50 +1,69 @@
-const aws = require('aws-sdk');
+const {
+  Route53Client,
+  ListHostedZonesCommand,
+  ListResourceRecordSetsCommand
+} = require('@aws-sdk/client-route-53');
 const createLogger = require('./logger');
 
-module.exports.getHostedZones = async () => {
-  try {
-    const route53 = new aws.Route53();
-    const domains = [];
-    let Marker = null;
-    let zones = {};
-    do {
-      // eslint-disable-next-line no-await-in-loop
-      zones = await route53.listHostedZones({ Marker }).promise();
-      zones.HostedZones.forEach((z) => domains.push({ id: z.Id, name: z.Name }));
-      Marker = zones.NextMarker;
-    } while (zones.IsTruncated);
-    return domains;
-  } catch (e) {
-    const logger = createLogger();
-    logger.error('Error fetching Route53 Hosted Zones', e.message);
-    throw e;
-  }
-};
+async function getHostedZones() {
+  const route53 = new Route53Client();
+  const hostedZones = [];
+  let Marker = null;
+  let isTruncated = true;
+  const logger = createLogger();
 
-module.exports.getDomainRecordSets = async (zoneId) => {
   try {
-    const route53 = new aws.Route53();
-    const records = [];
-    let StartRecordIdentifier = null;
-    let result = {};
-    do {
-      // eslint-disable-next-line no-await-in-loop
-      result = await route53.listResourceRecordSets({
+    while (isTruncated) {
+      const params = Marker ? { Marker } : {};
+      const command = new ListHostedZonesCommand(params);
+      const response = await route53.send(command);
+
+      response.HostedZones.forEach((zone) => {
+        hostedZones.push({ id: zone.Id, name: zone.Name });
+      });
+
+      Marker = response.NextMarker;
+      isTruncated = response.IsTruncated;
+    }
+  } catch (error) {
+    logger.error('Error fetching Route53 Hosted Zones', error.message);
+    throw error;
+  }
+
+  return hostedZones;
+}
+
+async function getDomainRecordSets(zoneId) {
+  const route53 = new Route53Client();
+  const records = [];
+  let StartRecordIdentifier = null;
+  let isTruncated = true;
+  const logger = createLogger();
+
+  try {
+    while (isTruncated) {
+      const params = {
         HostedZoneId: zoneId,
         StartRecordIdentifier
-      }).promise();
+      };
+      const command = new ListResourceRecordSetsCommand(params);
+      const result = await route53.send(command);
+
       const filteredRecords = result.ResourceRecordSets.filter((rs) => ['A', 'AAAA', 'CNAME'].indexOf(rs.Type) !== -1);
       filteredRecords.forEach((fr) => {
         if (!records.find((r) => r === fr.Name)) {
           records.push(fr.Name);
         }
       });
+
       StartRecordIdentifier = result.NextRecordIdentifier;
-    } while (result.IsTruncated);
+      isTruncated = result.IsTruncated;
+    }
     return records;
   } catch (e) {
-    const logger = createLogger();
     logger.error('Error fetching Route53 Record Sets', e.message);
     throw e;
   }
-};
+}
+
+module.exports = { getHostedZones, getDomainRecordSets };

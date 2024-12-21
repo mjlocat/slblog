@@ -1,6 +1,3 @@
-/* global jest */
-/* global test */
-/* global expect */
 const mockfs = require('mock-fs');
 const createLogger = require('./logger');
 const config = require('./config');

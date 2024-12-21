@@ -1,5 +1,3 @@
-/* global test */
-/* global expect */
 const validators = require('./validators');
 
 test('Good prefix', () => {

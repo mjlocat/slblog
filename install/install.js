@@ -56,9 +56,7 @@ module.exports.runInstaller = async () => {
   // If selecting "other" zone, insert logic here
 
   if (configObj.zone) {
-    const hostnameOptions = await module.exports.getHostnameOptions(
-      configObj.zone.id, configObj.hostname
-    );
+    const hostnameOptions = await module.exports.getHostnameOptions(configObj.zone.id, configObj.hostname);
     if (hostnameOptions.choices.length) {
       Object.assign(configObj, await prompts({
         type: 'select',
