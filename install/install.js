@@ -76,6 +76,7 @@ module.exports.runInstaller = async () => {
       message: 'Enter the hostname to use for your blog',
       validate: validators.hostnameValidator
     }));
+    configObj.hostname = `${configObj.hostname}.${configObj.zone.name}`;
   }
 
   config.saveConfig(configObj);

@@ -12,7 +12,7 @@ test('Installer script initializes configuration and saves at the end', async ()
     prefix: 'foo-',
     zone: {
       id: 'foo',
-      name: 'foo.com.'
+      name: 'foo.com'
     },
     hostname: 'www.foo.com'
   };
@@ -33,7 +33,7 @@ test('Installer script initializes configuration and saves at the end', async ()
   let savedConfig = {};
   config.saveConfig.mockImplementation((inConfig) => { savedConfig = inConfig; });
   prompts.mockResolvedValueOnce({ prefix: 'foo-' });
-  prompts.mockResolvedValueOnce({ zone: { id: 'foo', name: 'foo.com.' } });
+  prompts.mockResolvedValueOnce({ zone: { id: 'foo', name: 'foo.com' } });
   prompts.mockResolvedValueOnce({ hostname: 'www.foo.com' });
 
   await install.runInstaller();
@@ -62,7 +62,7 @@ test('Installer script with no hostnames available', async () => {
   config.getConfig.mockReturnValueOnce({ });
   prompts.mockResolvedValueOnce({ prefix: 'foo-' });
   aws.getHostedZones.mockResolvedValueOnce(([{ id: 'foo', name: 'foo.com.' }]));
-  prompts.mockResolvedValueOnce({ zone: { id: 'foo', name: 'foo.com.' } });
+  prompts.mockResolvedValueOnce({ zone: { id: 'foo', name: 'foo.com' } });
   aws.getDomainRecordSets.mockResolvedValue([]);
   let foundHostname = false;
   config.saveConfig.mockImplementation((inConfig) => { foundHostname = inConfig.hostname; });
@@ -135,9 +135,9 @@ test('User enters new hostname', async () => {
     prefix: 'foo-',
     zone: {
       id: 'foo',
-      name: 'foo.com.'
+      name: 'foo.com'
     },
-    hostname: 'new'
+    hostname: 'new.foo.com'
   };
   config.getConfig.mockReturnValueOnce({ });
   aws.getHostedZones.mockResolvedValueOnce([
@@ -156,7 +156,7 @@ test('User enters new hostname', async () => {
   let savedConfig = {};
   config.saveConfig.mockImplementation((inConfig) => { savedConfig = inConfig; });
   prompts.mockResolvedValueOnce({ prefix: 'foo-' });
-  prompts.mockResolvedValueOnce({ zone: { id: 'foo', name: 'foo.com.' } });
+  prompts.mockResolvedValueOnce({ zone: { id: 'foo', name: 'foo.com' } });
   prompts.mockResolvedValueOnce({ hostname: 'other' });
   prompts.mockResolvedValueOnce({ hostname: 'new' });
 
