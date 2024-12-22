@@ -62,13 +62,21 @@ module.exports.runInstaller = async () => {
         type: 'select',
         name: 'hostname',
         message: 'The following hostnames were found, select one to use or select "other"',
-        choices: hostnameOptions.choices,
+        choices: [{ title: 'other', value: 'other' }, ...hostnameOptions.choices],
         initial: hostnameOptions.initial
       }));
     }
   }
 
   // If selecting "other" hostname, insert logic here
+  if (configObj.hostname === 'other') {
+    Object.assign(configObj, await prompts({
+      type: 'text',
+      name: 'hostname',
+      message: 'Enter the hostname to use for your blog',
+      validate: validators.hostnameValidator
+    }));
+  }
 
   config.saveConfig(configObj);
   process.removeListener('SIGINT', module.exports.interruptHandler);

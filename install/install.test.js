@@ -129,3 +129,39 @@ test('Build hostname options', async () => {
     initial: 1
   });
 });
+
+test('User enters new hostname', async () => {
+  const expectedConfig = {
+    prefix: 'foo-',
+    zone: {
+      id: 'foo',
+      name: 'foo.com.'
+    },
+    hostname: 'new'
+  };
+  config.getConfig.mockReturnValueOnce({ });
+  aws.getHostedZones.mockResolvedValueOnce([
+    {
+      id: 'foo',
+      name: 'foo.com.'
+    }, {
+      id: 'bar',
+      name: 'bar.com.'
+    }, {
+      id: 'baz',
+      name: 'baz.com.'
+    }
+  ]);
+  aws.getDomainRecordSets.mockResolvedValue(['www.foo.com.']);
+  let savedConfig = {};
+  config.saveConfig.mockImplementation((inConfig) => { savedConfig = inConfig; });
+  prompts.mockResolvedValueOnce({ prefix: 'foo-' });
+  prompts.mockResolvedValueOnce({ zone: { id: 'foo', name: 'foo.com.' } });
+  prompts.mockResolvedValueOnce({ hostname: 'other' });
+  prompts.mockResolvedValueOnce({ hostname: 'new' });
+
+  await install.runInstaller();
+  expect(config.getConfig).toHaveBeenCalled();
+  expect(config.saveConfig).toHaveBeenCalled();
+  expect(savedConfig).toEqual(expectedConfig);
+});
